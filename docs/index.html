@@ -4,123 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎯 IP Detector - Surveillance System</title>
-    
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Courier New', monospace;
-            background: #0a0a0a;
-            color: #00ff00;
-            overflow-x: hidden;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .terminal {
-            background: #1a1a1a;
-            border: 2px solid #00ff00;
-            border-radius: 10px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-        }
-        
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #00ff00;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
-            margin-bottom: 10px;
-        }
-        
-        .line {
-            margin: 10px 0;
-            font-size: 1.1em;
-            min-height: 1.5em;
-        }
-        
-        .cursor {
-            display: inline-block;
-            width: 10px;
-            height: 20px;
-            background: #00ff00;
-            animation: blink 0.5s infinite;
-            vertical-align: middle;
-        }
-        
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-        }
-        
-        #map {
-            height: 600px;
-            border: 2px solid #00ff00;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-            display: none;
-        }
-        
-        .info-panel {
-            background: #1a1a1a;
-            border: 2px solid #00ff00;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-            display: none;
-        }
-        
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #333;
-        }
-        
-        .info-label {
-            font-weight: bold;
-            color: #00ffff;
-        }
-        
-        .info-value {
-            color: #ffff00;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            font-size: 1.5em;
-        }
-        
-        .error {
-            color: #ff0000;
-            border-color: #ff0000;
-        }
-        
-        .success {
-            color: #00ff00;
-        }
-        
-        .warning {
-            color: #ffff00;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff00; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .terminal { background: #1a1a1a; border: 2px solid #00ff00; border-radius: 10px; padding: 30px; margin-bottom: 30px; }
+        .header { text-align: center; border-bottom: 2px solid #00ff00; padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5em; text-shadow: 0 0 10px rgba(0, 255, 0, 0.8); }
+        .line { margin: 10px 0; font-size: 1.1em; }
+        .cursor { display: inline-block; width: 10px; height: 20px; background: #00ff00; animation: blink 0.5s infinite; }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+        #map { height: 600px; border: 2px solid #00ff00; border-radius: 10px; display: none; }
+        .info-panel { background: #1a1a1a; border: 2px solid #00ff00; border-radius: 10px; padding: 20px; margin-top: 20px; display: none; }
+        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #333; }
+        .info-label { font-weight: bold; color: #00ffff; }
+        .info-value { color: #ffff00; }
+        .success { color: #00ff00; }
+        .warning { color: #ffff00; }
+        .error { color: #ff0000; }
     </style>
 </head>
 <body>
@@ -130,34 +32,105 @@
                 <h1>🎯 IP DETECTOR</h1>
                 <p>СИСТЕМА ГЕОЛОКАЦИОННОГО МОНИТОРИНГА</p>
             </div>
-            
-            <div id="console">
-                <div class="loading">
-                    Инициализация системы...<span class="cursor"></span>
-                </div>
-            </div>
-            
+            <div id="console"></div>
             <div id="map"></div>
-            
             <div id="info-panel" class="info-panel">
                 <h3>📊 ИНФОРМАЦИЯ О ЦЕЛИ</h3>
                 <div id="info-content"></div>
             </div>
         </div>
     </div>
-
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script>
-        // Эффект печатной машинки
         async function typeWriter(text, element, speed = 50) {
             const span = document.createElement('span');
             element.appendChild(span);
-            
             for (let i = 0; i < text.length; i++) {
                 span.innerHTML += text.charAt(i);
-                await sleep(speed);
+                await new Promise(r => setTimeout(r, speed));
             }
-            
-            return span;
+        }
+        function addLine(text, className = '') {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = 'line ' + className;
+            console.appendChild(line);
+            typeWriter(text, line, 30);
+            return line;
+        }
+        async function initSystem() {
+            await new Promise(r => setTimeout(r, 500));
+            addLine('🔐 ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ СЛЕЖЕНИЯ...', 'warning');
+            await new Promise(r => setTimeout(r, 800));
+            addLine('📡 Подключение к спутникам...', 'warning');
+            await new Promise(r => setTimeout(r, 800));
+            addLine('🌍 Поиск цели...', 'warning');
+            await new Promise(r => setTimeout(r, 1000));
+            addLine('='.repeat(60));
+            try { await detectLocation(); } 
+            catch (error) { addLine('❌ ОШИБКА: ' + error.message, 'error'); }
+        }
+        async function detectLocation() {
+            addLine('🎯 Определение местоположения...', 'warning');
+            await new Promise(r => setTimeout(r, 1000));
+            const apis = ['https://ipapi.co/json/', 'https://freeipapi.com/api/json'];
+            let data = null;
+            for (const api of apis) {
+                try {
+                    const response = await fetch(api);
+                    if (response.ok) {
+                        data = await response.json();
+                        if (data.latitude || data.lat) break;
+                    }
+                } catch (e) { continue; }
+            }
+            if (!data) throw new Error('Не удалось получить данные');
+            const info = {
+                ip: data.ip || 'Unknown',
+                city: data.city || 'Unknown',
+                region: data.region || '',
+                latitude: data.latitude || data.lat,
+                longitude: data.longitude || data.lon
+            };
+            addLine('✅ ЦЕЛЬ ОБНАРУЖЕНА', 'success');
+            await new Promise(r => setTimeout(r, 300));
+            addLine('🌍 IP: ' + info.ip, 'success');
+            await new Promise(r => setTimeout(r, 300));
+            addLine('📍 ГОРОД: ' + info.city + ', ' + info.region, 'success');
+            await new Promise(r => setTimeout(r, 300));
+            addLine('📡 КООРДИНАТЫ: ' + info.latitude + ', ' + info.longitude, 'success');
+            addLine('='.repeat(60));
+            showInfo(info);
+            await new Promise(r => setTimeout(r, 500));
+            addLine('🛰️ ГЕНЕРАЦИЯ КАРТЫ...', 'warning');
+            await new Promise(r => setTimeout(r, 1000));
+            createMap(info.latitude, info.longitude, info.city);
+            addLine('✅ ЦЕЛЬ ЗАХВАЧЕНА', 'success');
+        }
+        function showInfo(data) {
+            const panel = document.getElementById('info-panel');
+            const content = document.getElementById('info-content');
+            panel.style.display = 'block';
+            content.innerHTML = `
+                <div class="info-row"><span class="info-label">IP:</span><span class="info-value">${data.ip}</span></div>
+                <div class="info-row"><span class="info-label">Город:</span><span class="info-value">${data.city}</span></div>
+                <div class="info-row"><span class="info-label">Координаты:</span><span class="info-value">${data.latitude}, ${data.longitude}</span></div>
+            `;
+        }
+        function createMap(lat, lon, city) {
+            const mapDiv = document.getElementById('map');
+            mapDiv.style.display = 'block';
+            const map = L.map('map').setView([lat, lon], 3);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+            L.marker([lat, lon]).addTo(map).bindPopup(`<b>🎯 ${city}</b>`).openPopup();
+            L.circle([lat, lon], { color: 'red', fillColor: '#f03', fillOpacity: 0.3, radius: 1000 }).addTo(map);
+            setTimeout(() => {
+                [3, 5, 8, 11, 13, 15].forEach((z, i) => {
+                    setTimeout(() => map.setView([lat, lon], z, { animate: true, duration: 2 }), i * 1500);
+                });
+            }, 1000);
+        }
+        window.onload = initSystem;
+    </script>
+</body>
+</html>
