@@ -17,3 +17,7 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# Отчёты и данные
+*.json
+!package.json
