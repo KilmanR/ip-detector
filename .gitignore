@@ -1,0 +1,19 @@
+# Секреты и окружение
+.env
+venv/
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Сборка и дистрибутив
+dist/
+build/
+*.egg-info/
