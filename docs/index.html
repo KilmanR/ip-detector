@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎯 IP Detector - Surveillance System</title>
+    <title>🎯 IP Detector</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff00; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .terminal { background: #1a1a1a; border: 2px solid #00ff00; border-radius: 10px; padding: 30px; margin-bottom: 30px; }
-        .header { text-align: center; border-bottom: 2px solid #00ff00; padding-bottom: 20px; margin-bottom: 30px; }
+        .terminal { background: #1a1a1a; border: 2px solid #00ff00; border-radius: 10px; padding: 30px; }
+        .header { text-align: center; border-bottom: 2px solid #00ff00; padding-bottom: 20px; margin-bottom: 20px; }
         .header h1 { font-size: 2.5em; text-shadow: 0 0 10px rgba(0, 255, 0, 0.8); }
         .line { margin: 10px 0; font-size: 1.1em; }
-        .cursor { display: inline-block; width: 10px; height: 20px; background: #00ff00; animation: blink 0.5s infinite; }
-        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
-        #map { height: 600px; border: 2px solid #00ff00; border-radius: 10px; display: none; }
+        #map { height: 600px; border: 2px solid #00ff00; border-radius: 10px; margin-top: 20px; display: none; }
         .info-panel { background: #1a1a1a; border: 2px solid #00ff00; border-radius: 10px; padding: 20px; margin-top: 20px; display: none; }
         .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #333; }
         .info-label { font-weight: bold; color: #00ffff; }
@@ -30,12 +28,12 @@
         <div class="terminal">
             <div class="header">
                 <h1>🎯 IP DETECTOR</h1>
-                <p>СИСТЕМА ГЕОЛОКАЦИОННОГО МОНИТОРИНГА</p>
+                <p>СИСТЕМА ГЕОЛОКАЦИИ</p>
             </div>
             <div id="console"></div>
             <div id="map"></div>
             <div id="info-panel" class="info-panel">
-                <h3>📊 ИНФОРМАЦИЯ О ЦЕЛИ</h3>
+                <h3>📊 ИНФОРМАЦИЯ</h3>
                 <div id="info-content"></div>
             </div>
         </div>
@@ -56,77 +54,51 @@
             line.className = 'line ' + className;
             console.appendChild(line);
             typeWriter(text, line, 30);
-            return line;
         }
         async function initSystem() {
-            await new Promise(r => setTimeout(r, 500));
-            addLine('🔐 ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ СЛЕЖЕНИЯ...', 'warning');
+            addLine('🔐 ИНИЦИАЛИЗАЦИЯ...', 'warning');
             await new Promise(r => setTimeout(r, 800));
-            addLine('📡 Подключение к спутникам...', 'warning');
-            await new Promise(r => setTimeout(r, 800));
-            addLine('🌍 Поиск цели...', 'warning');
+            addLine('📡 ПОИСК ЦЕЛИ...', 'warning');
             await new Promise(r => setTimeout(r, 1000));
-            addLine('='.repeat(60));
-            try { await detectLocation(); } 
-            catch (error) { addLine('❌ ОШИБКА: ' + error.message, 'error'); }
+            try { 
+                await detectLocation(); 
+            } catch (error) { 
+                addLine('❌ ОШИБКА: ' + error.message, 'error'); 
+            }
         }
         async function detectLocation() {
-            addLine('🎯 Определение местоположения...', 'warning');
-            await new Promise(r => setTimeout(r, 1000));
+            addLine('🎯 Определение...', 'warning');
             
-            // Используем ip-api.com — самый надежный бесплатный API
-            const response = await fetch('http://ip-api.com/json/?fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query');
-            
-            if (!response.ok) throw new Error('API не ответил');
+            // HTTPS API с CORS поддержкой
+            const response = await fetch('https://ipapi.co/json/');
+            if (!response.ok) throw new Error('API недоступен');
             
             const data = await response.json();
             
-            if (data.status !== 'success') {
-                throw new Error(data.message || 'Неизвестная ошибка');
-            }
-            
-            addLine('✅ ЦЕЛЬ ОБНАРУЖЕНА', 'success');
-            await new Promise(r => setTimeout(r, 300));
-            addLine('🌍 IP: ' + data.query, 'success');
-            await new Promise(r => setTimeout(r, 300));
-            addLine('📍 ГОРОД: ' + data.city + ', ' + data.regionName, 'success');
-            await new Promise(r => setTimeout(r, 300));
-            addLine('🏢 ПРОВАЙДЕР: ' + data.isp, 'success');
-            await new Promise(r => setTimeout(r, 300));
-            addLine('📡 КООРДИНАТЫ: ' + data.lat + ', ' + data.lon, 'success');
-            addLine('='.repeat(60));
+            addLine('✅ ЦЕЛЬ: ' + data.ip, 'success');
+            addLine('📍 ' + data.city + ', ' + data.country_name, 'success');
+            addLine('📡 ' + data.latitude + ', ' + data.longitude, 'success');
             
             showInfo(data);
-            await new Promise(r => setTimeout(r, 500));
-            addLine('🛰️ ГЕНЕРАЦИЯ КАРТЫ...', 'warning');
-            await new Promise(r => setTimeout(r, 1000));
-            createMap(data.lat, data.lon, data.city);
-            addLine('✅ ЦЕЛЬ ЗАХВАЧЕНА', 'success');
+            createMap(data.latitude, data.longitude, data.city);
+            addLine('✅ ГОТОВО', 'success');
         }
         function showInfo(data) {
             const panel = document.getElementById('info-panel');
             const content = document.getElementById('info-content');
             panel.style.display = 'block';
             content.innerHTML = `
-                <div class="info-row"><span class="info-label">IP:</span><span class="info-value">${data.query}</span></div>
-                <div class="info-row"><span class="info-label">Город:</span><span class="info-value">${data.city}, ${data.regionName}</span></div>
-                <div class="info-row"><span class="info-label">Страна:</span><span class="info-value">${data.country}</span></div>
-                <div class="info-row"><span class="info-label">Провайдер:</span><span class="info-value">${data.isp}</span></div>
-                <div class="info-row"><span class="info-label">Координаты:</span><span class="info-value">${data.lat}, ${data.lon}</span></div>
+                <div class="info-row"><span class="info-label">IP:</span><span class="info-value">${data.ip}</span></div>
+                <div class="info-row"><span class="info-label">Город:</span><span class="info-value">${data.city}</span></div>
+                <div class="info-row"><span class="info-label">Страна:</span><span class="info-value">${data.country_name}</span></div>
+                <div class="info-row"><span class="info-label">Провайдер:</span><span class="info-value">${data.org}</span></div>
             `;
         }
         function createMap(lat, lon, city) {
-            const mapDiv = document.getElementById('map');
-            mapDiv.style.display = 'block';
-            const map = L.map('map').setView([lat, lon], 3);
+            document.getElementById('map').style.display = 'block';
+            const map = L.map('map').setView([lat, lon], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-            L.marker([lat, lon]).addTo(map).bindPopup(`<b>🎯 ${city}</b>`).openPopup();
-            L.circle([lat, lon], { color: 'red', fillColor: '#f03', fillOpacity: 0.3, radius: 1000 }).addTo(map);
-            setTimeout(() => {
-                [3, 5, 8, 11, 13, 15].forEach((z, i) => {
-                    setTimeout(() => map.setView([lat, lon], z, { animate: true, duration: 2 }), i * 1500);
-                });
-            }, 1000);
+            L.marker([lat, lon]).addTo(map).bindPopup(`<b>${city}</b>`).openPopup();
         }
         window.onload = initSystem;
     </script>
