@@ -73,29 +73,32 @@
         async function detectLocation() {
             addLine('🎯 Определение...', 'warning');
             
-            // Используем ipwho.is - точно работает с CORS
-            const response = await fetch('https://ipwho.is/');
-            if (!response.ok) throw new Error('API недоступен');
+            // GeoJS.io — бесплатный API с CORS
+            const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
+            if (!response.ok) throw new Error('API недоступен (403)');
             
             const data = await response.json();
             console.log('API Response:', data);
             
-            if (!data.success) throw new Error('API вернул ошибку');
-            
-            const ip = data.ip;
+            const ip = data.ip || 'Unknown';
             const city = data.city || 'Unknown';
             const country = data.country || 'Unknown';
-            const latitude = data.latitude;
-            const longitude = data.longitude;
-            const isp = data.connection?.isp || 'Unknown';
+            const latitude = parseFloat(data.latitude) || 0;
+            const longitude = parseFloat(data.longitude) || 0;
+            const organization = data.organization || 'Unknown';
             
             addLine('✅ ЦЕЛЬ: ' + ip, 'success');
             addLine('📍 ' + city + ', ' + country, 'success');
-            addLine('📡 ' + latitude + ', ' + longitude, 'success');
-            addLine('🏢 ' + isp, 'success');
             
-            showInfo({ip, city, country, latitude, longitude, isp});
-            createMap(latitude, longitude, city);
+            if (latitude !== 0 && longitude !== 0) {
+                addLine('📡 ' + latitude + ', ' + longitude, 'success');
+                addLine('🏢 ' + organization, 'success');
+                showInfo({ip, city, country, latitude, longitude, organization});
+                createMap(latitude, longitude, city);
+            } else {
+                addLine('⚠️ Координаты недоступны', 'warning');
+            }
+            
             addLine('✅ ГОТОВО', 'success');
         }
         function showInfo(data) {
@@ -106,7 +109,7 @@
                 <div class="info-row"><span class="info-label">IP:</span><span class="info-value">${data.ip}</span></div>
                 <div class="info-row"><span class="info-label">Город:</span><span class="info-value">${data.city}</span></div>
                 <div class="info-row"><span class="info-label">Страна:</span><span class="info-value">${data.country}</span></div>
-                <div class="info-row"><span class="info-label">Провайдер:</span><span class="info-value">${data.isp}</span></div>
+                <div class="info-row"><span class="info-label">Организация:</span><span class="info-value">${data.organization}</span></div>
                 <div class="info-row"><span class="info-label">Координаты:</span><span class="info-value">${data.latitude}, ${data.longitude}</span></div>
             `;
         }
