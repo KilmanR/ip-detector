@@ -73,38 +73,34 @@
         async function detectLocation() {
             addLine('🎯 Определение местоположения...', 'warning');
             await new Promise(r => setTimeout(r, 1000));
-            const apis = ['https://ipapi.co/json/', 'https://freeipapi.com/api/json'];
-            let data = null;
-            for (const api of apis) {
-                try {
-                    const response = await fetch(api);
-                    if (response.ok) {
-                        data = await response.json();
-                        if (data.latitude || data.lat) break;
-                    }
-                } catch (e) { continue; }
+            
+            // Используем ip-api.com — самый надежный бесплатный API
+            const response = await fetch('http://ip-api.com/json/?fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query');
+            
+            if (!response.ok) throw new Error('API не ответил');
+            
+            const data = await response.json();
+            
+            if (data.status !== 'success') {
+                throw new Error(data.message || 'Неизвестная ошибка');
             }
-            if (!data) throw new Error('Не удалось получить данные');
-            const info = {
-                ip: data.ip || 'Unknown',
-                city: data.city || 'Unknown',
-                region: data.region || '',
-                latitude: data.latitude || data.lat,
-                longitude: data.longitude || data.lon
-            };
+            
             addLine('✅ ЦЕЛЬ ОБНАРУЖЕНА', 'success');
             await new Promise(r => setTimeout(r, 300));
-            addLine('🌍 IP: ' + info.ip, 'success');
+            addLine('🌍 IP: ' + data.query, 'success');
             await new Promise(r => setTimeout(r, 300));
-            addLine('📍 ГОРОД: ' + info.city + ', ' + info.region, 'success');
+            addLine('📍 ГОРОД: ' + data.city + ', ' + data.regionName, 'success');
             await new Promise(r => setTimeout(r, 300));
-            addLine('📡 КООРДИНАТЫ: ' + info.latitude + ', ' + info.longitude, 'success');
+            addLine('🏢 ПРОВАЙДЕР: ' + data.isp, 'success');
+            await new Promise(r => setTimeout(r, 300));
+            addLine('📡 КООРДИНАТЫ: ' + data.lat + ', ' + data.lon, 'success');
             addLine('='.repeat(60));
-            showInfo(info);
+            
+            showInfo(data);
             await new Promise(r => setTimeout(r, 500));
             addLine('🛰️ ГЕНЕРАЦИЯ КАРТЫ...', 'warning');
             await new Promise(r => setTimeout(r, 1000));
-            createMap(info.latitude, info.longitude, info.city);
+            createMap(data.lat, data.lon, data.city);
             addLine('✅ ЦЕЛЬ ЗАХВАЧЕНА', 'success');
         }
         function showInfo(data) {
@@ -112,9 +108,11 @@
             const content = document.getElementById('info-content');
             panel.style.display = 'block';
             content.innerHTML = `
-                <div class="info-row"><span class="info-label">IP:</span><span class="info-value">${data.ip}</span></div>
-                <div class="info-row"><span class="info-label">Город:</span><span class="info-value">${data.city}</span></div>
-                <div class="info-row"><span class="info-label">Координаты:</span><span class="info-value">${data.latitude}, ${data.longitude}</span></div>
+                <div class="info-row"><span class="info-label">IP:</span><span class="info-value">${data.query}</span></div>
+                <div class="info-row"><span class="info-label">Город:</span><span class="info-value">${data.city}, ${data.regionName}</span></div>
+                <div class="info-row"><span class="info-label">Страна:</span><span class="info-value">${data.country}</span></div>
+                <div class="info-row"><span class="info-label">Провайдер:</span><span class="info-value">${data.isp}</span></div>
+                <div class="info-row"><span class="info-label">Координаты:</span><span class="info-value">${data.lat}, ${data.lon}</span></div>
             `;
         }
         function createMap(lat, lon, city) {
