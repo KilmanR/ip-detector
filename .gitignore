@@ -21,3 +21,6 @@ build/
 # Отчёты и данные
 *.json
 !package.json
+reports/
+__pycache__/
+.env
